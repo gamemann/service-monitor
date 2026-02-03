@@ -75,22 +75,19 @@ impl HttpCheck {
         let res = req.send().await;
 
         match res {
-            Ok(res) => {
-                let status = res.status();
-
-                if status.is_success() {
-                    Ok(true)
+            Ok(_) => Ok(true),
+            Err(e) => {
+                if e.is_status() {
+                    return Err(CheckError::new(format!(
+                        "Request failed due to invalid status code: {}",
+                        e.status().unwrap()
+                    )));
+                } else if e.is_timeout() {
+                    return Err(CheckError::new(format!("Request timed out: {}", e)));
                 } else {
-                    Err(CheckError::new(format!(
-                        "Request failed with non-success status code: {}",
-                        status.as_u16()
-                    )))
+                    return Err(CheckError::new(format!("Request failed: {}", e)));
                 }
             }
-            Err(e) => Err(CheckError::new(format!(
-                "Request failed: {}",
-                e.to_string()
-            ))),
         }
     }
 }
