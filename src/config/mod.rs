@@ -7,7 +7,9 @@ mod utils;
 pub use alert::{Alert, AlertType, DiscordAlert};
 pub use check::{Check, CheckType, HttpCheckConfig};
 pub use defaults::{
-    def_cron, def_debug_lvl, def_fails_cnt_to_alert, def_lats_max_track, def_log_dir,
+    def_alert_discord_content_basic, def_alert_discord_timeout, def_alert_type,
+    def_check_http_method, def_check_http_timeout, def_check_http_url, def_check_type, def_cron,
+    def_debug_lvl, def_fails_cnt_to_alert, def_lats_max_track, def_log_dir,
 };
 pub use service::Service;
 

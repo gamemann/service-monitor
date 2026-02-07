@@ -4,14 +4,21 @@ use std::fmt::Display;
 
 use std::collections::HashMap;
 
-use crate::config::def_cron;
+use crate::config::{
+    def_check_http_method, def_check_http_timeout, def_check_http_url, def_check_type, def_cron,
+};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct HttpCheckConfig {
+    #[serde(default = "def_check_http_timeout")]
     pub timeout: u32,
 
+    #[serde(default = "def_check_http_method")]
     pub method: String,
+
+    #[serde(default = "def_check_http_url")]
     pub url: String,
+
     pub headers: Option<HashMap<String, String>>,
 }
 
@@ -26,7 +33,7 @@ pub struct Check {
     #[serde(default = "def_cron")]
     pub cron: String,
 
-    #[serde(rename = "type")]
+    #[serde(rename = "type", default = "def_check_type")]
     pub check_type: CheckType,
 
     pub http: Option<HttpCheckConfig>,
