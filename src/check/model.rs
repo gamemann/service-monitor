@@ -1,5 +1,6 @@
-use crate::check::{error::CheckError, http::HttpCheck};
-use crate::service::{ServiceState, ServiceStatus, SharedState};
+use crate::check::http::HttpCheck;
+
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub enum CheckType {
@@ -8,35 +9,31 @@ pub enum CheckType {
 
 #[derive(Debug, Clone)]
 pub struct Check {
-    pub name: Option<String>,
     pub cron: String,
 
     pub check_type: CheckType,
+
+    pub fails_tot: u32,
+    pub fails_cur: u32,
 }
 
 impl Check {
-    pub fn new(name: Option<String>, cron: String, check_type: CheckType) -> Self {
+    pub fn new(cron: String, check_type: CheckType) -> Self {
         Check {
-            name,
             cron,
+
             check_type,
+
+            fails_tot: 0,
+            fails_cur: 0,
         }
     }
 
-    pub async fn exec(&self, uid: &str, state: SharedState) -> Result<(), CheckError> {
-        // We need to set the state to checking.
-        ServiceState::set_state(&state, uid, ServiceStatus::CHECKING).await;
+    pub async fn exec(&self) -> Result<()> {
+        let check_type = self.check_type.clone();
 
-        let res = match &self.check_type {
-            CheckType::Http(http_check) => http_check.exec(&uid).await,
+        match check_type {
+            CheckType::Http(http_check) => return http_check.exec().await,
         };
-
-        let new_status = match res {
-            Ok(true) => ServiceStatus::HEALTHY,
-            Ok(false) | Err(_) => ServiceStatus::UNHEALTHY,
-        };
-
-        ServiceState::set_state(&state, uid, new_status).await;
-        Ok(())
     }
 }

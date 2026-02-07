@@ -1,8 +1,8 @@
-use crate::alert::error::AlertError;
-
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+
+use anyhow::{Result, anyhow};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscordWebHookBody {
@@ -33,7 +33,7 @@ impl DiscordAlert {
         }
     }
 
-    pub async fn exec(&self) -> Result<(), AlertError> {
+    pub async fn exec(&self) -> Result<()> {
         let cl = reqwest::Client::new();
 
         // We need to decide what payload to send based off of raw contents.
@@ -60,19 +60,19 @@ impl DiscordAlert {
 
             Err(e) => {
                 if e.is_timeout() {
-                    return Err(AlertError::new(format!("Request timed out: {}", e)));
+                    return Err(anyhow!("Request timed out: {}", e));
                 } else {
                     match e.status() {
                         Some(status) => {
-                            return Err(AlertError::new(format!(
+                            return Err(anyhow!(
                                 "Request failed with status code: {}",
                                 status.as_u16()
-                            )));
+                            ));
                         }
                         None => (),
                     }
 
-                    return Err(AlertError::new(format!("Request failed: {}", e)));
+                    return Err(anyhow!("Request failed: {}", e));
                 }
             }
         }

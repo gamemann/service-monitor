@@ -1,20 +1,28 @@
 mod alert;
 mod check;
+mod defaults;
 mod service;
 mod utils;
 
 pub use alert::{Alert, AlertType, DiscordAlert};
 pub use check::{Check, CheckType, HttpCheckConfig};
+pub use defaults::{
+    def_cron, def_debug_lvl, def_fails_cnt_to_alert, def_lats_max_track, def_log_dir,
+};
 pub use service::Service;
-pub use utils::print;
 
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 
-#[derive(Deserialize, Debug)]
+use anyhow::Result;
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    pub debug_lvl: String,
+    #[serde(default = "def_debug_lvl")]
+    pub debug_lvl: Option<String>,
+
+    #[serde(default = "def_log_dir")]
     pub log_dir: Option<String>,
 
     pub services: Vec<Service>,
@@ -22,15 +30,17 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Self {
+        // These don't indicate the default values.
+        // That is done with serde.
         Config {
-            debug_lvl: "info".into(),
-            log_dir: String::from("logs/").into(),
+            debug_lvl: None,
+            log_dir: None,
             services: Vec::new(),
         }
     }
 
-    pub fn load(&mut self, file_path: &str) -> Result<Self, serde_json::Error> {
-        let mut file = File::open(file_path).expect("Unable to open config file");
+    pub fn load(&mut self, file_path: &str) -> Result<()> {
+        let mut file: File = File::open(file_path).expect("Unable to open config file");
 
         let mut contents = String::new();
 
@@ -39,8 +49,8 @@ impl Config {
 
         let new_cfg: Config = serde_json::from_str(&contents).expect("Unable to parse config file");
 
-        let new_self = std::mem::replace(self, new_cfg);
-
-        Ok(new_self)
+        match std::mem::replace(self, new_cfg) {
+            _ => Ok(()),
+        }
     }
 }

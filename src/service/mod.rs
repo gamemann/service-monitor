@@ -1,7 +1,5 @@
-pub mod error;
 pub mod model;
-pub mod state;
+pub mod status;
 
-pub use error::ServiceError;
-pub use state::{ServiceState, SharedState};
-pub use model::{Service, ServiceStatus};
+pub use model::Service;
+pub use status::ServiceStatus;

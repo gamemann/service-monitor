@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use std::fmt::Display;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct DiscordAlert {
     pub webhook_url: String,
     pub timeout: u32,
@@ -11,7 +11,7 @@ pub struct DiscordAlert {
     pub content_raw: Option<String>,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 pub enum AlertType {
     #[serde(rename = "discord")]
     DISCORD,
@@ -23,7 +23,7 @@ impl Display for AlertType {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Alert {
     #[serde(rename = "type")]
     pub alert_type: AlertType,

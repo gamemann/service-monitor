@@ -4,7 +4,9 @@ use std::fmt::Display;
 
 use std::collections::HashMap;
 
-#[derive(Deserialize, Debug)]
+use crate::config::def_cron;
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct HttpCheckConfig {
     pub timeout: u32,
 
@@ -19,9 +21,9 @@ pub enum CheckType {
     HTTP,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Check {
-    pub name: Option<String>,
+    #[serde(default = "def_cron")]
     pub cron: String,
 
     #[serde(rename = "type")]

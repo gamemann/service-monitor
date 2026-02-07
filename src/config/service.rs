@@ -1,12 +1,22 @@
 use crate::config::Alert;
 use crate::config::Check;
 
+use crate::config::{def_fails_cnt_to_alert, def_lats_max_track};
+
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Service {
-    pub uid: String,
     pub name: String,
-    pub checks: Vec<Check>,
-    pub alerts: Option<Vec<Alert>>,
+
+    pub check: Check,
+
+    pub alert_pass: Option<Alert>,
+    pub alert_fail: Option<Alert>,
+
+    #[serde(default = "def_fails_cnt_to_alert")]
+    pub fails_cnt_to_alert: Option<u32>,
+
+    #[serde(default = "def_lats_max_track")]
+    pub lats_max_track: Option<u32>,
 }

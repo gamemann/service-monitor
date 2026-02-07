@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use std::time::Duration;
 
-use crate::check::error::CheckError;
+use anyhow::{Result, anyhow};
 
 #[derive(Debug, Clone)]
 pub enum HttpMethod {
@@ -52,7 +52,7 @@ impl HttpCheck {
         self.method.as_str()
     }
 
-    pub async fn exec(&self, _uid: &str) -> Result<bool, CheckError> {
+    pub async fn exec(&self) -> Result<()> {
         let cl = reqwest::Client::new();
 
         let mut req = match self.method {
@@ -75,17 +75,17 @@ impl HttpCheck {
         let res = req.send().await;
 
         match res {
-            Ok(_) => Ok(true),
+            Ok(_) => Ok(()),
             Err(e) => {
                 if e.is_status() {
-                    return Err(CheckError::new(format!(
+                    return Err(anyhow!(
                         "Request failed due to invalid status code: {}",
                         e.status().unwrap()
-                    )));
+                    ));
                 } else if e.is_timeout() {
-                    return Err(CheckError::new(format!("Request timed out: {}", e)));
+                    return Err(anyhow!("Request timed out: {}", e));
                 } else {
-                    return Err(CheckError::new(format!("Request failed: {}", e)));
+                    return Err(anyhow!("Request failed: {}", e));
                 }
             }
         }

@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
 
-use crate::alert::error::AlertError;
-
 use crate::alert::discord::DiscordAlert;
+
+use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub enum AlertType {
@@ -25,7 +25,7 @@ impl Alert {
         Self { alert_type }
     }
 
-    pub async fn exec(&self) -> Result<(), AlertError> {
+    pub async fn exec(&self) -> Result<()> {
         match &self.alert_type {
             AlertType::Discord(discord_alert) => discord_alert.exec().await,
         }

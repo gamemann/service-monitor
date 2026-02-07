@@ -1,74 +1,82 @@
 use crate::config::Config;
 
-pub fn print(cfg: &Config) {
-    println!("Listing settings...");
+impl Config {
+    pub fn print(&self) {
+        println!("Listing settings...");
 
-    println!("Debug level: {}", cfg.debug_lvl);
+        let debug_lvl = match self.debug_lvl.clone() {
+            Some(lvl) => lvl,
+            None => String::from("N/A"),
+        };
 
-    let log_dir: String;
+        println!("Debug level: {}", debug_lvl);
 
-    match &cfg.log_dir {
-        Some(dir) => log_dir = dir.clone(),
-        None => log_dir = String::from("N/A"),
-    }
+        let log_dir = match self.log_dir.clone() {
+            Some(dir) => dir,
+            None => String::from("N/A"),
+        };
 
-    println!("Log directory: {}", log_dir);
+        println!("Log directory: {}", log_dir);
 
-    if cfg.services.len() > 0 {
-        println!("Services:");
-        for service in &cfg.services {
-            println!("\t{} (UID => {})", service.name, service.uid);
+        if self.services.len() > 0 {
+            println!("Services:");
+            for service in self.services.iter() {
+                println!("\t{}", service.name);
 
-            let checks = &service.checks;
+                let fails_cnt_to_alert = match service.fails_cnt_to_alert {
+                    Some(cnt) => cnt,
+                    None => 0,
+                };
 
-            if checks.len() > 0 {
-                println!("\t\tChecks:");
+                println!("\t\tFails Count To Alert => {}", fails_cnt_to_alert);
 
-                for (idx, check) in checks.iter().enumerate() {
-                    let check_name = match &check.name {
-                        Some(name) => name.clone(),
-                        None => String::from(format!("#{}", idx + 1)),
-                    };
+                let lats_max_track = match service.lats_max_track {
+                    Some(cnt) => cnt,
+                    None => 0,
+                };
 
-                    println!("\t\t\tCheck {}:", check_name);
-                    println!("\t\t\t\tCron: {}", check.cron);
-                    println!("\t\t\t\tType: {}", check.check_type);
+                println!("\t\tLatency Max Track => {}", lats_max_track);
 
-                    // If we have web check settings, print them.
-                    if let Some(http) = &check.http {
-                        println!("\t\t\t\tHTTP Check:");
-                        println!("\t\t\t\t\tMethod: {}", http.method);
-                        println!("\t\t\t\t\tUrl: {}", http.url);
+                // We need to list check settings!
+                let check = service.check.clone();
 
-                        // If we have headers, map and print them as well.
-                        if let Some(headers) = &http.headers {
-                            println!("\t\t\t\t\tHeaders:");
-                            for (key, val) in headers {
-                                println!("\t\t\t\t\t\t{}: {}", key, val);
-                            }
+                println!("\t\tCheck Settings");
+
+                println!("\t\t\tCron: {}", check.cron);
+                println!("\t\t\tType: {}", check.check_type);
+
+                // If we have web check settings, print them.
+                if let Some(http) = &check.http {
+                    println!("\t\t\tHTTP Settings:");
+                    println!("\t\t\t\tMethod: {}", http.method);
+                    println!("\t\t\t\tUrl: {}", http.url);
+
+                    // If we have headers, map and print them as well.
+                    if let Some(headers) = &http.headers {
+                        println!("\t\t\t\tHeaders:");
+                        for (key, val) in headers {
+                            println!("\t\t\t\t\t{}: {}", key, val);
                         }
                     }
                 }
-            }
 
-            if let Some(alerts) = &service.alerts {
-                println!("\t\tAlerts:");
+                if let Some(alert) = &service.alert_pass {
+                    let alert = alert.clone();
 
-                for (idx, alert) in alerts.iter().enumerate() {
-                    println!("\t\t\tAlert #{}: {}", idx + 1, alert);
+                    println!("\t\tAlert (Success):");
 
-                    println!("\t\t\t\tType: {}", alert.alert_type);
+                    println!("\t\t\tType: {}", alert.alert_type);
 
-                    if let Some(discord) = &alert.discord {
-                        println!("\t\t\t\tDiscord Settings:");
+                    if let Some(discord) = alert.discord {
+                        println!("\t\t\tDiscord Settings:");
 
-                        println!("\t\t\t\t\tWebhook URL: {}", discord.webhook_url);
-                        println!("\t\t\t\t\tTimeout: {}", discord.timeout);
-                        println!("\t\t\t\t\tContent Basic: {}", discord.content_basic);
+                        println!("\t\t\t\tWebhook URL: {}", discord.webhook_url);
+                        println!("\t\t\t\tTimeout: {}", discord.timeout);
+                        println!("\t\t\t\tContent Basic: {}", discord.content_basic);
 
                         println!(
-                            "\t\t\t\t\tContent Raw: {}",
-                            match &discord.content_raw {
+                            "\t\t\t\tContent Raw: {}",
+                            match discord.content_raw {
                                 Some(contents) => contents.clone(),
                                 None => String::from("N/A"),
                             }
