@@ -1,0 +1,37 @@
+{
+    "debug_lvl": "debug",
+    "log_dir": null,
+    "services": [
+        {
+            "name": "TMC Website",
+
+            "check": {
+                "cron": "0 * * * * *",
+                "type": "http",
+                "http": {
+                    "method": "GET",
+                    "url": "https://moddingcommunity.com",
+                    "timeout": 5
+                }
+            },
+            "alert_pass": {
+                "type": "discord",
+                "discord": {
+                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "timeout": 5,
+                    "content_basic": "TMC website is back online!",
+                    "content_raw": null
+                }
+            },
+            "alert_fail": {
+                "type": "discord",
+                "discord": {
+                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "timeout": 5,
+                    "content_basic": "TMC website is offline!",
+                    "content_raw": null
+                }
+            }
+        }
+    ]
+}
