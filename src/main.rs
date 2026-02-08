@@ -5,7 +5,7 @@ pub mod config;
 pub mod debugger;
 pub mod service;
 
-use cli::Args;
+use cli::{Args, UserInput};
 use config::Config;
 
 use alert::{Alert, AlertType, DiscordAlert};
@@ -13,8 +13,7 @@ use check::{Check, CheckType};
 use debugger::{LogLevel, Logger};
 use service::Service;
 
-use std::time::Duration;
-use tokio::time;
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use tokio_cron_scheduler::JobScheduler;
@@ -39,7 +38,7 @@ async fn main() -> Result<()> {
     }
 
     // We need to create log level enum and parse it from config.
-    let log_level = match cfg.debug_lvl.unwrap().as_str() {
+    let log_level = match cfg.debug_lvl.clone().unwrap().as_str() {
         "debug" => LogLevel::DEBUG,
         "info" => LogLevel::INFO,
         "warn" => LogLevel::WARN,
@@ -48,10 +47,13 @@ async fn main() -> Result<()> {
     };
 
     // We need to initialize our logger objecr first to pass along.
-    let logger = Logger::new(log_level, cfg.log_dir.clone());
+    let logger = Logger::new(log_level, cfg.log_dir.clone(), args.input);
 
     // We need to create our cron scheduler now.
-    let mut sch = JobScheduler::new().await?;
+    let mut sched = JobScheduler::new().await?;
+
+    // Create our service objects now.
+    let services = Arc::new(Mutex::new(Vec::new()));
 
     // Loop through each service from config.
     for cfg_service in cfg.services.iter() {
@@ -59,19 +61,24 @@ async fn main() -> Result<()> {
 
         // We need to parse the check type from the config before creating the check object.
         let check_type = match cfg_check.check_type {
-            config::CheckType::HTTP => CheckType::Http(check::HttpCheck {
-                url: cfg_check.clone().http.unwrap().url.clone(),
-                method: match cfg_check.clone().http.unwrap().method.as_str() {
-                    "GET" => check::HttpMethod::GET,
-                    "POST" => check::HttpMethod::POST,
-                    "PUT" => check::HttpMethod::PUT,
-                    "DELETE" => check::HttpMethod::DELETE,
-                    "PATCH" => check::HttpMethod::PATCH,
-                    _ => check::HttpMethod::GET,
-                },
-                headers: cfg_check.clone().http.unwrap().headers.clone(),
-                timeout: cfg_check.clone().http.unwrap().timeout.into(),
-            }),
+            config::CheckType::HTTP => {
+                let http: config::HttpCheckConfig = cfg_check.clone().http.unwrap();
+
+                CheckType::Http(check::HttpCheck {
+                    url: http.url.clone(),
+                    method: match http.method.as_str() {
+                        "GET" => check::HttpMethod::GET,
+                        "POST" => check::HttpMethod::POST,
+                        "PUT" => check::HttpMethod::PUT,
+                        "DELETE" => check::HttpMethod::DELETE,
+                        "PATCH" => check::HttpMethod::PATCH,
+                        _ => check::HttpMethod::GET,
+                    },
+                    headers: http.headers.clone(),
+                    timeout: http.timeout.into(),
+                    is_insecure: http.is_insecure,
+                })
+            }
         };
 
         // Create a new check object.
@@ -83,17 +90,17 @@ async fn main() -> Result<()> {
         if let Some(alert_pass_cfg) = cfg_service.alert_pass.clone() {
             alert_pass = Some(Alert {
                 alert_type: match alert_pass_cfg.alert_type {
-                    config::AlertType::DISCORD => AlertType::Discord(DiscordAlert::new(
-                        alert_pass_cfg.clone().discord.unwrap().webhook_url.clone(),
-                        alert_pass_cfg.clone().discord.unwrap().timeout.into(),
-                        alert_pass_cfg
-                            .clone()
-                            .discord
-                            .unwrap()
-                            .content_basic
-                            .clone(),
-                        alert_pass_cfg.clone().discord.unwrap().content_raw.clone(),
-                    )),
+                    config::AlertType::DISCORD => {
+                        let discord = alert_pass_cfg.clone().discord.unwrap();
+
+                        AlertType::Discord(DiscordAlert::new(
+                            discord.webhook_url.clone(),
+                            discord.timeout.into(),
+                            discord.is_insecure,
+                            discord.content_basic.clone(),
+                            discord.content_raw.clone(),
+                        ))
+                    }
                 },
             });
         }
@@ -104,17 +111,17 @@ async fn main() -> Result<()> {
         if let Some(alert_fail_cfg) = cfg_service.alert_fail.clone() {
             alert_fail = Some(Alert {
                 alert_type: match alert_fail_cfg.alert_type {
-                    config::AlertType::DISCORD => AlertType::Discord(DiscordAlert::new(
-                        alert_fail_cfg.clone().discord.unwrap().webhook_url.clone(),
-                        alert_fail_cfg.clone().discord.unwrap().timeout.into(),
-                        alert_fail_cfg
-                            .clone()
-                            .discord
-                            .unwrap()
-                            .content_basic
-                            .clone(),
-                        alert_fail_cfg.clone().discord.unwrap().content_raw.clone(),
-                    )),
+                    config::AlertType::DISCORD => {
+                        let discord = alert_fail_cfg.clone().discord.unwrap();
+
+                        AlertType::Discord(DiscordAlert::new(
+                            discord.webhook_url.clone(),
+                            discord.timeout.into(),
+                            discord.is_insecure,
+                            discord.content_basic.clone(),
+                            discord.content_raw.clone(),
+                        ))
+                    }
                 },
             });
         }
@@ -129,16 +136,62 @@ async fn main() -> Result<()> {
             cfg_service.lats_max_track,
         );
 
-        new_service.init_check(&mut sch, &logger).await?;
+        new_service.init_check(&mut sched, &logger).await?;
+
+        let mut services = services.lock().unwrap();
+        services.push(new_service);
     }
 
-    sch.shutdown_on_ctrl_c();
+    sched.shutdown_on_ctrl_c();
 
-    sch.start().await?;
+    sched.start().await?;
 
-    time::sleep(Duration::from_secs(1)).await;
+    // We need to create a new UserInput object.
+    let mut input = UserInput::new(cfg, services);
 
-    logger.log(debugger::INFO, "Exiting...");
+    match args.input {
+        true => logger.log(
+            LogLevel::INFO,
+            "Services started. Using input mode. Please input 'quit', 'exit', or 'q' to exit...",
+            true,
+        ),
+        false => logger.log(
+            LogLevel::INFO,
+            "Services started. Please use CTRL + C to exit...",
+            false,
+        ),
+    }
+
+    let mut cont = true;
+
+    while cont == true {
+        tokio::select! {
+            _ = async {
+                // If we're not in input mode, just sleep.
+                if !args.input {
+                    std::future::pending::<()>().await;
+                }
+
+                match input.parse().await {
+                    Ok(keep_cont) => {
+                        cont = keep_cont;
+                    },
+                    Err(e) => {
+                        println!("Error: {}", e);
+
+                        cont = false;
+                    }
+                }
+            } => {}
+            _ = tokio::signal::ctrl_c() => {
+                cont = false;
+            }
+        }
+    }
+
+    println!();
+
+    logger.log(debugger::INFO, "Exiting...", true);
 
     Ok(())
 }

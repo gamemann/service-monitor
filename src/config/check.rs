@@ -5,7 +5,8 @@ use std::fmt::Display;
 use std::collections::HashMap;
 
 use crate::config::{
-    def_check_http_method, def_check_http_timeout, def_check_http_url, def_check_type, def_cron,
+    def_check_http_is_insecure, def_check_http_method, def_check_http_timeout, def_check_http_url,
+    def_check_type, def_cron,
 };
 
 #[derive(Deserialize, Debug, Clone)]
@@ -18,6 +19,9 @@ pub struct HttpCheckConfig {
 
     #[serde(default = "def_check_http_url")]
     pub url: String,
+
+    #[serde(default = "def_check_http_is_insecure")]
+    pub is_insecure: bool,
 
     pub headers: Option<HashMap<String, String>>,
 }

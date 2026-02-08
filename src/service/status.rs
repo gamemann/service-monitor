@@ -20,11 +20,11 @@ impl ServiceStatus {
 }
 
 impl Service {
-    pub fn get_status(&self) -> ServiceStatus {
-        self.status.clone()
+    pub async fn get_status(&self) -> ServiceStatus {
+        self.status.lock().await.clone()
     }
 
-    pub fn set_status(&mut self, status: ServiceStatus) {
-        self.status = status;
+    pub async fn set_status(&mut self, status: ServiceStatus) {
+        *self.status.lock().await = status;
     }
 }

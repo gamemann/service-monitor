@@ -16,16 +16,16 @@ use anyhow::{Result, anyhow};
 
 #[derive(Debug, Clone)]
 pub struct Service {
-    pub status: ServiceStatus,
+    pub status: Arc<Mutex<ServiceStatus>>,
 
     pub name: String,
 
     pub lats_max_track: u32,
-    pub lats: Vec<u32>,
+    pub lats: Arc<Mutex<Vec<u32>>>,
 
     pub fails_cnt_to_alert: u32,
 
-    pub check: Check,
+    pub check: Arc<Mutex<Check>>,
 
     pub alert_pass: Option<Alert>,
     pub alert_fail: Option<Alert>,
@@ -41,14 +41,14 @@ impl Service {
         lats_max_track: Option<u32>,
     ) -> Self {
         Service {
-            status: ServiceStatus::INIT,
+            status: Arc::new(Mutex::new(ServiceStatus::INIT)),
 
             name,
 
             lats_max_track: lats_max_track.unwrap_or(10),
-            lats: Vec::new(),
+            lats: Arc::new(Mutex::new(Vec::new())),
 
-            check,
+            check: Arc::new(Mutex::new(check)),
 
             alert_pass,
             alert_fail,
@@ -57,25 +57,29 @@ impl Service {
         }
     }
 
-    pub fn lat_min(&self) -> Option<u32> {
-        self.lats.iter().min().copied()
+    pub async fn lat_min(&self) -> Option<u32> {
+        self.lats.lock().await.iter().min().copied()
     }
 
-    pub fn lat_max(&self) -> Option<u32> {
-        self.lats.iter().max().copied()
+    pub async fn lat_max(&self) -> Option<u32> {
+        self.lats.lock().await.iter().max().copied()
     }
 
-    pub fn lat_avg(&self) -> Option<u32> {
-        match self.lats.len() {
+    pub async fn lat_avg(&self) -> Option<u32> {
+        let lats = self.lats.lock().await;
+
+        match lats.len() {
             0 => None,
-            len => Some(self.lats.iter().sum::<u32>() / len as u32),
+            len => Some(lats.iter().sum::<u32>() / len as u32),
         }
     }
 
-    pub fn lat_last(&self) -> Option<u32> {
-        match self.lats.len() {
+    pub async fn lat_last(&self) -> Option<u32> {
+        let lats = self.lats.lock().await;
+
+        match lats.len() {
             0 => None,
-            _ => Some(self.lats.last().copied().unwrap_or(0) as u32),
+            _ => Some(lats.last().copied().unwrap_or(0) as u32),
         }
     }
 
@@ -86,16 +90,17 @@ impl Service {
 
         let fails_cnt_to_alert = self.fails_cnt_to_alert;
         let lats_max_track = self.lats_max_track;
-        let cron: String = self.check.cron.clone();
 
         // We need to clone *again* so that we can use these later.
         let name2 = name.clone();
 
         // Create Arcs
-        let status = Arc::new(Mutex::new(self.status.clone()));
-        let lats = Arc::new(Mutex::new(self.lats.clone()));
+        let status = self.status.clone();
+        let lats = self.lats.clone();
 
-        let check = Arc::new(Mutex::new(self.check.clone()));
+        let check = self.check.clone();
+
+        let cron: String = check.lock().await.cron.clone();
 
         let alert_pass = Arc::new(self.alert_pass.clone());
         let alert_fail = Arc::new(self.alert_fail.clone());
@@ -128,12 +133,13 @@ impl Service {
                         logger.log(
                             LogLevel::ERROR,
                             format!("Unable to run check for {}: {}", name, e).as_str(),
+                            false,
                         );
 
                         // We need to check the fails count threshold and alert if needed.
-                        if fails_cnt_to_alert > 0
-                            && check.fails_tot == fails_cnt_to_alert
-                            && let Some(alert) = alert_fail.as_ref()
+                        if let Some(alert) = alert_fail.as_ref()
+                            && fails_cnt_to_alert > 0
+                            && check.fails_cur == fails_cnt_to_alert
                         {
                             match alert.exec().await {
                                 Ok(_) => (),
@@ -141,6 +147,7 @@ impl Service {
                                     LogLevel::ERROR,
                                     format!("Unable to run fail alert for {}: {}", name, e)
                                         .as_str(),
+                                    false,
                                 ),
                             }
                         }
@@ -181,6 +188,7 @@ impl Service {
                                     LogLevel::ERROR,
                                     format!("Unable to run healthyalert for {}: {}", name, e)
                                         .as_str(),
+                                    false,
                                 ),
                             }
                         }

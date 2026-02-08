@@ -47,3 +47,11 @@ pub fn def_alert_discord_timeout() -> u32 {
 pub fn def_alert_discord_content_basic() -> String {
     String::from("Found {s.name} offline!")
 }
+
+pub fn def_check_http_is_insecure() -> bool {
+    false
+}
+
+pub fn def_alert_discord_is_insecure() -> bool {
+    false
+}

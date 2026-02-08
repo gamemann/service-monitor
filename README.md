@@ -1,9 +1,12 @@
-### ⚠️ WIP & Not Yet Functional
 A simple service monitor written in Rust. Each *service* contains a check and optional success and failure **alerts**.
+
+![Preview](./images/preview.gif)
 
 The only type of check supported right now is HTTP/HTTPS which simply checks the status code of a web page (or a timeout).
 
 At this time, the only type of alert type supported is Discord. This alert executes a configured web hook and allows you to send basic or raw data (e.g. being able to post a message inside a channel).
+
+⚠️ While this project is functional, is it still a big WIP!
 
 ## Building & Running
 Building and running is simple once you've installed Rust onto your system.
@@ -48,7 +51,16 @@ cargo run --release -- --list
 | Args | Default | Description |
 | ---- | ------- | ----------- |
 | `-c --cfg` | `./settings.json` | The path to the config file to load. |
+| `-i --input` | - | If set, runs the program with input mode. This allows you to run commands such as `list` to list current services, etc. |
 | `-l --list` | - | If set, loads the config, prints the new values, and exits. |
+
+### Input Mode
+When input mode is enabled, the user may execute commands via `stdin`. Here is a list of current commands supported.
+
+| Cmd(s) | Description |
+| ------ | ----------- |
+| `list` | List services and their status/stats. |
+|  `quit`, `exit`, `q` | Exits the program. |
 
 ## Configuration
 We use JSON to store configuration settings. By default, the program attempts to load the file `./settings.json` which is not created by default. You may copy the [`settings.ex.json`](./settings.ex.json) file to `settings.json`. If you'd like to change the config file location, please use the command line arguments detailed above.
@@ -129,9 +141,10 @@ This object contains settings for a HTTP/HTTPS check.
 
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
-| timeout | u32 | `10` | The request timeout before failing. |
 | method | string | string(`"get" \| "post" \| "put" \| "delete" \| "patch"`) | `"get"` | The HTTP method to use when sending the request. |
 | url | string | `"http://127.0.0.1"` | The URL to send the HTTP request to. |
+| timeout | u32 | `10` | The request timeout before failing. |
+| is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
 | headers | string => string mapping | `{"...": "..."}` | An optional object of headers (string => string). |
 
 ### Alert Object
@@ -149,6 +162,7 @@ This object contains settings for the Discord alert type which allows the execut
 | ---- | ---- | ------- | ----------- 
 | webhook_url | string | `NULL` | The Discord webhook URL. |
 | timeout | u32 | `10` | The Discord webhook request's timeout in seconds. |
+| is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
 | content_basic | string | `NULL` | If `content_raw` isn't set, the value of this is passed to the `content` string inside of the body of the Discord webhook request. |
 | content_raw | string | `NULL` | If set, passes the value of this as the body when sending the Discord webhook request. |
 

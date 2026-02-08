@@ -50,6 +50,8 @@ impl Config {
                     println!("\t\t\tHTTP Settings:");
                     println!("\t\t\t\tMethod: {}", http.method);
                     println!("\t\t\t\tUrl: {}", http.url);
+                    println!("\t\t\t\tTimeout: {}", http.timeout);
+                    println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
 
                     // If we have headers, map and print them as well.
                     if let Some(headers) = &http.headers {
@@ -64,6 +66,32 @@ impl Config {
                     let alert = alert.clone();
 
                     println!("\t\tAlert (Success):");
+
+                    println!("\t\t\tType: {}", alert.alert_type);
+
+                    if let Some(discord) = alert.discord {
+                        println!("\t\t\tDiscord Settings:");
+
+                        println!("\t\t\t\tWebhook URL: {}", discord.webhook_url);
+                        println!("\t\t\t\tTimeout: {}", discord.timeout);
+                        println!("\t\t\t\tIs Insecure => {}", discord.is_insecure);
+
+                        println!("\t\t\t\tContent Basic: {}", discord.content_basic);
+
+                        println!(
+                            "\t\t\t\tContent Raw: {}",
+                            match discord.content_raw {
+                                Some(contents) => contents.clone(),
+                                None => String::from("N/A"),
+                            }
+                        );
+                    }
+                }
+
+                if let Some(alert) = &service.alert_fail {
+                    let alert = alert.clone();
+
+                    println!("\t\tAlert (Failure):");
 
                     println!("\t\t\tType: {}", alert.alert_type);
 

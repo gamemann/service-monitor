@@ -1,16 +1,7 @@
-use clap::Parser;
+mod arg;
+mod input;
+mod service;
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-    #[arg(short = 'c', long = "cfg", default_value = "./settings.json")]
-    pub cfg_path: String,
+pub use arg::Args;
 
-    #[arg(
-        short = 'l',
-        long = "list",
-        default_value_t = false,
-        help = "List configuration settings"
-    )]
-    pub list: bool,
-}
+pub use input::UserInput;

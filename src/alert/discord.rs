@@ -14,6 +14,8 @@ pub struct DiscordAlert {
     pub webhook_url: String,
     pub timeout: u32,
 
+    pub is_insecure: bool,
+
     pub content_basic: String,
     pub content_raw: Option<String>,
 }
@@ -22,19 +24,24 @@ impl DiscordAlert {
     pub fn new(
         webhook_url: String,
         timeout: u32,
+        is_insecure: bool,
         content_basic: String,
         content_raw: Option<String>,
     ) -> Self {
         Self {
             webhook_url,
             timeout,
+            is_insecure,
             content_basic,
             content_raw,
         }
     }
 
     pub async fn exec(&self) -> Result<()> {
-        let cl = reqwest::Client::new();
+        let cl = reqwest::Client::builder()
+            .danger_accept_invalid_certs(self.is_insecure)
+            .danger_accept_invalid_hostnames(self.is_insecure)
+            .build()?;
 
         // We need to decide what payload to send based off of raw contents.
         let body = match &self.content_raw {
@@ -56,22 +63,22 @@ impl DiscordAlert {
         let res = req.send().await;
 
         match res {
-            Ok(_) => (),
+            Ok(res) => {
+                let status_code = res.status().as_u16();
+
+                if status_code != 200 {
+                    return Err(anyhow!("Request failed with status code: {}", status_code));
+                }
+            }
 
             Err(e) => {
                 if e.is_timeout() {
                     return Err(anyhow!("Request timed out: {}", e));
-                } else {
-                    match e.status() {
-                        Some(status) => {
-                            return Err(anyhow!(
-                                "Request failed with status code: {}",
-                                status.as_u16()
-                            ));
-                        }
-                        None => (),
-                    }
+                } else if e.is_status() {
+                    let status_code = e.status().unwrap().as_u16();
 
+                    return Err(anyhow!("Request failed with status code: {}", status_code));
+                } else {
                     return Err(anyhow!("Request failed: {}", e));
                 }
             }

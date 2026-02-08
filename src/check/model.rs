@@ -2,9 +2,17 @@ use crate::check::http::HttpCheck;
 
 use anyhow::Result;
 
+use std::fmt;
+
 #[derive(Debug, Clone)]
 pub enum CheckType {
     Http(HttpCheck),
+}
+
+impl fmt::Display for CheckType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Debug, Clone)]
