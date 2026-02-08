@@ -6,7 +6,7 @@ The only type of check supported right now is HTTP/HTTPS which simply checks the
 
 At this time, the only type of alert type supported is Discord. This alert executes a configured web hook and allows you to send basic or raw data (e.g. being able to post a message inside a channel).
 
-⚠️ While this project is functional, is it still a big WIP!
+⚠️ While this project is functional, it is still a big WIP!
 
 ## Building & Running
 Building and running is simple once you've installed Rust onto your system.
