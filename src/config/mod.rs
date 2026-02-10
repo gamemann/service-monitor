@@ -8,8 +8,7 @@ pub use check::{Check, CheckType, HttpCheckConfig};
 pub use service::Service;
 
 use serde::Deserialize;
-use std::fs::File;
-use std::io::Read;
+use std::fs;
 
 use anyhow::Result;
 
@@ -44,15 +43,13 @@ impl Config {
     }
 
     pub fn load(&mut self, file_path: &str) -> Result<()> {
-        let mut file: File = File::open(file_path).expect("Unable to open config file");
+        // Read contents from config file and store.
+        // Use fs::read_to_string() for simplicity.
+        let contents = fs::read_to_string(file_path)?;
 
-        let mut contents = String::new();
+        let new_cfg: Config = serde_json::from_str(&contents)?;
 
-        file.read_to_string(&mut contents)
-            .expect("Unable to read contents of file");
-
-        let new_cfg: Config = serde_json::from_str(&contents).expect("Unable to parse config file");
-
+        // Since we can't reassign self directly, use mem::replace() to update config structure.
         match std::mem::replace(self, new_cfg) {
             _ => Ok(()),
         }

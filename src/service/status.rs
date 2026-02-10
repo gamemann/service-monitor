@@ -1,5 +1,7 @@
 use crate::service::Service;
 
+use std::fmt;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ServiceStatus {
     INIT,
@@ -8,14 +10,18 @@ pub enum ServiceStatus {
     UNHEALTHY,
 }
 
-impl ServiceStatus {
-    pub fn as_str(&self) -> &str {
-        match self {
-            ServiceStatus::INIT => "Init",
-            ServiceStatus::HEALTHY => "Healthy",
-            ServiceStatus::CHECKING => "Checking",
-            ServiceStatus::UNHEALTHY => "Unhealthy",
-        }
+impl fmt::Display for ServiceStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ServiceStatus::INIT => "INIT",
+                ServiceStatus::HEALTHY => "HEALTHY",
+                ServiceStatus::CHECKING => "CHECKING",
+                ServiceStatus::UNHEALTHY => "UNHEALTHY",
+            }
+        )
     }
 }
 

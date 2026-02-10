@@ -16,7 +16,7 @@ impl UserInput {
         for service in services.iter() {
             println!("\t{}", service.name);
 
-            println!("\t\tStatus => {}", service.get_status().await.as_str());
+            println!("\t\tStatus => {}", service.get_status().await.to_string());
 
             println!(
                 "\t\tLatency Min => {}ms",

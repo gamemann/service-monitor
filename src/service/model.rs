@@ -119,6 +119,9 @@ impl Service {
             Box::pin(async move {
                 let mut check = check.lock().await;
 
+                // If we're checking, just return.
+                let old_status = status.lock().await.clone();
+
                 // Set state to checking.
                 *status.lock().await = ServiceStatus::CHECKING;
 
@@ -127,11 +130,15 @@ impl Service {
 
                 match check.exec().await {
                     Err(e) => {
-                        logger.log(
-                            LogLevel::ERROR,
-                            format!("Unable to run check for {}: {}", name, e).as_str(),
-                            false,
-                        );
+                        let first_time = check.fails_cur == 0;
+
+                        if first_time {
+                            logger.log(
+                                LogLevel::ERROR,
+                                format!("Unable to run check for {}: {}", name, e).as_str(),
+                                false,
+                            );
+                        }
 
                         // We need to check the fails count threshold and alert if needed.
                         if let Some(alert) = alert_fail.as_ref()
@@ -174,6 +181,17 @@ impl Service {
 
                         // Quickly set state to healthy.
                         *status.lock().await = ServiceStatus::HEALTHY;
+
+                        // If we weren't healthy before, we need to trigger alerts and check things.
+                        if old_status == ServiceStatus::HEALTHY {
+                            return;
+                        }
+
+                        logger.log(
+                            LogLevel::INFO,
+                            format!("{} is now healthy!", name).as_str(),
+                            false,
+                        );
 
                         // We need to trigger pass alert if enabled and if our current fail count exeeds the fail alert threshold (or 0 if none).
                         if let Some(alert) = alert_pass.as_ref()
