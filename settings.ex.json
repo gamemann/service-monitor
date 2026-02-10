@@ -15,21 +15,21 @@
                 }
             },
             "alert_pass": {
-                "type": "discord",
-                "discord": {
-                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
-                    "timeout": 5,
-                    "method": "TMC website is back online!",
-                    "body": null
+                "type": "http",
+                "http": {
+                    "method": "POST",
+                    "url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "body": "\"{\"content\":\"Alert pass test.\"\"}",
+                    "timeout": 5
                 }
             },
             "alert_fail": {
-                "type": "discord",
-                "discord": {
-                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
-                    "timeout": 5,
-                    "method": "TMC website is offline!",
-                    "body": null
+                "type": "http",
+                "http": {
+                    "method": "POST",
+                    "url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "body": "\"{\"content\":\"Alert fail test.\"\"}",
+                    "timeout": 5
                 }
             }
         }

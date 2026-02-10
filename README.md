@@ -2,9 +2,9 @@ A simple service monitor written in Rust. Each *service* contains a check and op
 
 ![Preview](./images/preview.gif)
 
-The only type of check supported right now is HTTP/HTTPS which simply checks the status code of a web page (or a timeout).
+The only type of check supported right now is HTTP/HTTPS which simply checks for a success status code from a web page (or a timeout).
 
-At this time, the only type of alert type supported is Discord. This alert executes a configured web hook and allows you to send basic or raw data (e.g. being able to post a message inside a channel).
+At this time, the only type of alert type supported is also HTTP/HTTPS. This alert sends a request to a URL with the option to specify the body and headers.
 
 ⚠️ While this project is functional, it is still a big WIP!
 
@@ -92,21 +92,21 @@ We use JSON to store configuration settings. By default, the program attempts to
                 }
             },
             "alert_pass": {
-                "type": "discord",
-                "discord": {
-                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
-                    "timeout": 5,
-                    "method": "TMC website is back online!",
-                    "body": null
+                "type": "http",
+                "http": {
+                    "method": "POST",
+                    "url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "body": "\"{\"content\":\"Alert pass test.\"\"}",
+                    "timeout": 5
                 }
             },
             "alert_fail": {
-                "type": "discord",
-                "discord": {
-                    "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
-                    "timeout": 5,
-                    "method": "TMC website is offline!",
-                    "body": null
+                "type": "http",
+                "http": {
+                    "method": "POST",
+                    "url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
+                    "body": "\"{\"content\":\"Alert fail test.\"\"}",
+                    "timeout": 5
                 }
             }
         }
@@ -143,28 +143,32 @@ This object contains settings for a HTTP/HTTPS check.
 | ---- | ---- | ------- | ----------- |
 | method | string | string(`"get" \| "post" \| "put" \| "delete" \| "patch"`) | `"get"` | The HTTP method to use when sending the request. |
 | url | string | `"http://127.0.0.1"` | The URL to send the HTTP request to. |
-| timeout | u32 | `10` | The request timeout before failing. |
-| is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
+| timeout | u64 | `10` | The request timeout before failing. |
+| body | string | `NULL` | If set, sends this as the body. |
+| body_is_file | bool | `false` | If true, treats the body value as a file path and reads the contents of the file and sends that as the body string. |
 | headers | string => string mapping | `{"...": "..."}` | An optional object of headers (string => string). |
+| is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
 
 ### Alert Object
 This object contains settings for a service's alert.
 
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- 
-| type | string(`"discord"`) | `"discord"` | The type of alert. |
-| discord | Discord Object | `{...}` | The Discord alert object. |
+| type | string(`"http"`) | `"http"` | The type of alert. |
+| http | HTTP Object | `{...}` | The HTTP alert object. |
 
-#### Discord Object
-This object contains settings for the Discord alert type which allows the execution of a Discord webhook.
+#### HTTP Object
+This object contains settings for the HTTP alert type which allows you to send a HTTP/HTTPS request with optional body and headers.
 
 | Name | Type | Default | Description |
 | ---- | ---- | ------- | ----------- 
-| webhook_url | string | `NULL` | The Discord webhook URL. |
-| timeout | u32 | `10` | The Discord webhook request's timeout in seconds. |
+| method | string | string(`"get" \| "post" \| "put" \| "delete" \| "patch"`) | `"get"` | The HTTP method to use when sending the request. |
+| url | string | `"http://127.0.0.1"` | The URL to send the HTTP request to. |
+| timeout | u64 | `10` | The request timeout before failing. |
+| body | string | `NULL` | If set, sends this as the body. |
+| body_is_file | bool | `false` | If true, treats the body value as a file path and reads the contents of the file and sends that as the body string. |
+| headers | string => string mapping | `{"...": "..."}` | An optional object of headers (string => string). |
 | is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
-| method | string | `NULL` | If `body` isn't set, the value of this is passed to the `content` string inside of the body of the Discord webhook request. |
-| body | string | `NULL` | If set, passes the value of this as the body when sending the Discord webhook request. |
 
 ## My Motives
 I tried learning Rust a couple of years ago, but unfortunately never stuck with it. However, since I will most likely be using Rust in the future for my job, I need/want to relearn it. I figured a good starting point is to create this service monitor that I will be using for my [modding project](https://moddingcommunity.com)!
