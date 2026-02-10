@@ -96,8 +96,8 @@ We use JSON to store configuration settings. By default, the program attempts to
                 "discord": {
                     "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
                     "timeout": 5,
-                    "content_basic": "TMC website is back online!",
-                    "content_raw": null
+                    "method": "TMC website is back online!",
+                    "body": null
                 }
             },
             "alert_fail": {
@@ -105,8 +105,8 @@ We use JSON to store configuration settings. By default, the program attempts to
                 "discord": {
                     "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
                     "timeout": 5,
-                    "content_basic": "TMC website is offline!",
-                    "content_raw": null
+                    "method": "TMC website is offline!",
+                    "body": null
                 }
             }
         }
@@ -163,8 +163,8 @@ This object contains settings for the Discord alert type which allows the execut
 | webhook_url | string | `NULL` | The Discord webhook URL. |
 | timeout | u32 | `10` | The Discord webhook request's timeout in seconds. |
 | is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
-| content_basic | string | `NULL` | If `content_raw` isn't set, the value of this is passed to the `content` string inside of the body of the Discord webhook request. |
-| content_raw | string | `NULL` | If set, passes the value of this as the body when sending the Discord webhook request. |
+| method | string | `NULL` | If `body` isn't set, the value of this is passed to the `content` string inside of the body of the Discord webhook request. |
+| body | string | `NULL` | If set, passes the value of this as the body when sending the Discord webhook request. |
 
 ## My Motives
 I tried learning Rust a couple of years ago, but unfortunately never stuck with it. However, since I will most likely be using Rust in the future for my job, I need/want to relearn it. I figured a good starting point is to create this service monitor that I will be using for my [modding project](https://moddingcommunity.com)!

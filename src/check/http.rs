@@ -4,56 +4,24 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 
-#[derive(Debug, Clone)]
-pub enum HttpMethod {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    PATCH,
-}
-
-impl HttpMethod {
-    pub fn as_str(&self) -> &str {
-        match self {
-            HttpMethod::GET => "GET",
-            HttpMethod::POST => "POST",
-            HttpMethod::PUT => "PUT",
-            HttpMethod::DELETE => "DELETE",
-            HttpMethod::PATCH => "PATCH",
-        }
-    }
-}
+use crate::helper::HttpMethod;
 
 #[derive(Debug, Clone)]
 pub struct HttpCheck {
+    pub url: String,
     pub method: HttpMethod,
 
-    pub is_insecure: bool,
-
-    pub url: String,
     pub timeout: u64,
+
+    pub body: Option<String>,
+    pub body_is_file: bool,
+
     pub headers: Option<HashMap<String, String>>,
+
+    pub is_insecure: bool,
 }
 
 impl HttpCheck {
-    pub fn set_http_settings(
-        &mut self,
-        method: HttpMethod,
-        url: String,
-        timeout: u64,
-        headers: Option<HashMap<String, String>>,
-    ) {
-        self.method = method;
-        self.url = url;
-        self.timeout = timeout;
-        self.headers = headers;
-    }
-
-    pub fn method_as_str(&self) -> &str {
-        self.method.as_str()
-    }
-
     pub async fn exec(&self) -> Result<()> {
         let cl = reqwest::Client::builder()
             .danger_accept_invalid_certs(self.is_insecure)

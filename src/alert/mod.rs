@@ -1,5 +1,5 @@
-mod discord;
+mod http;
 mod model;
 
-pub use discord::DiscordAlert;
+pub use http::HttpAlert;
 pub use model::{Alert, AlertType};

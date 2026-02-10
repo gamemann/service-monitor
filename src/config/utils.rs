@@ -48,18 +48,30 @@ impl Config {
                 // If we have web check settings, print them.
                 if let Some(http) = &check.http {
                     println!("\t\t\tHTTP Settings:");
-                    println!("\t\t\t\tMethod: {}", http.method);
-                    println!("\t\t\t\tUrl: {}", http.url);
+                    println!("\t\t\t\tMethod => {}", http.method);
+                    println!("\t\t\t\tURL: {}", http.url);
                     println!("\t\t\t\tTimeout: {}", http.timeout);
-                    println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
 
-                    // If we have headers, map and print them as well.
-                    if let Some(headers) = &http.headers {
+                    println!("\t\t\t\tBody Is File => {}", http.body_is_file);
+
+                    println!(
+                        "\t\t\t\tBody Raw: {}",
+                        match &http.body {
+                            Some(contents) => contents.clone(),
+                            None => String::from("N/A"),
+                        }
+                    );
+
+                    if let Some(headers) = &http.headers
+                        && headers.len() > 0
+                    {
                         println!("\t\t\t\tHeaders:");
                         for (key, val) in headers {
                             println!("\t\t\t\t\t{}: {}", key, val);
                         }
                     }
+
+                    println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
                 }
 
                 if let Some(alert) = &service.alert_pass {
@@ -69,22 +81,33 @@ impl Config {
 
                     println!("\t\t\tType: {}", alert.alert_type);
 
-                    if let Some(discord) = alert.discord {
-                        println!("\t\t\tDiscord Settings:");
+                    if let Some(http) = alert.http {
+                        println!("\t\t\tHttp Settings:");
 
-                        println!("\t\t\t\tWebhook URL: {}", discord.webhook_url);
-                        println!("\t\t\t\tTimeout: {}", discord.timeout);
-                        println!("\t\t\t\tIs Insecure => {}", discord.is_insecure);
+                        println!("\t\t\t\tMethod => {}", http.method);
+                        println!("\t\t\t\tURL: {}", http.url);
+                        println!("\t\t\t\tTimeout: {}", http.timeout);
 
-                        println!("\t\t\t\tContent Basic: {}", discord.content_basic);
+                        println!("\t\t\t\tBody Is File => {}", http.body_is_file);
 
                         println!(
-                            "\t\t\t\tContent Raw: {}",
-                            match discord.content_raw {
+                            "\t\t\t\tBody Raw: {}",
+                            match http.body {
                                 Some(contents) => contents.clone(),
                                 None => String::from("N/A"),
                             }
                         );
+
+                        if let Some(headers) = &http.headers
+                            && headers.len() > 0
+                        {
+                            println!("\t\t\t\tHeaders:");
+                            for (key, val) in headers {
+                                println!("\t\t\t\t\t{}: {}", key, val);
+                            }
+                        }
+
+                        println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
                     }
                 }
 
@@ -95,20 +118,32 @@ impl Config {
 
                     println!("\t\t\tType: {}", alert.alert_type);
 
-                    if let Some(discord) = alert.discord {
-                        println!("\t\t\tDiscord Settings:");
+                    if let Some(http) = alert.http {
+                        println!("\t\t\tHttp Settings:");
+                        println!("\t\t\t\tMethod => {}", http.method);
+                        println!("\t\t\t\tURL: {}", http.url);
+                        println!("\t\t\t\tTimeout: {}", http.timeout);
 
-                        println!("\t\t\t\tWebhook URL: {}", discord.webhook_url);
-                        println!("\t\t\t\tTimeout: {}", discord.timeout);
-                        println!("\t\t\t\tContent Basic: {}", discord.content_basic);
+                        println!("\t\t\t\tBody Is File => {}", http.body_is_file);
 
                         println!(
-                            "\t\t\t\tContent Raw: {}",
-                            match discord.content_raw {
+                            "\t\t\t\tBody Raw: {}",
+                            match http.body {
                                 Some(contents) => contents.clone(),
                                 None => String::from("N/A"),
                             }
                         );
+
+                        if let Some(headers) = &http.headers
+                            && headers.len() > 0
+                        {
+                            println!("\t\t\t\tHeaders:");
+                            for (key, val) in headers {
+                                println!("\t\t\t\t\t{}: {}", key, val);
+                            }
+                        }
+
+                        println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
                     }
                 }
             }

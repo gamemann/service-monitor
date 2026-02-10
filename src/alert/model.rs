@@ -1,12 +1,12 @@
 use std::fmt::{Display, Formatter};
 
-use crate::alert::discord::DiscordAlert;
+use crate::alert::http::HttpAlert;
 
 use anyhow::Result;
 
 #[derive(Debug, Clone)]
 pub enum AlertType {
-    Discord(DiscordAlert),
+    Http(HttpAlert),
 }
 
 impl Display for AlertType {
@@ -27,7 +27,7 @@ impl Alert {
 
     pub async fn exec(&self) -> Result<()> {
         match &self.alert_type {
-            AlertType::Discord(discord_alert) => discord_alert.exec().await,
+            AlertType::Http(http_alert) => http_alert.exec().await,
         }
     }
 }

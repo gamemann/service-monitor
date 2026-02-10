@@ -4,24 +4,64 @@ use std::fmt::Display;
 
 use std::collections::HashMap;
 
-use crate::config::{
-    def_check_http_is_insecure, def_check_http_method, def_check_http_timeout, def_check_http_url,
-    def_check_type, def_cron,
-};
+/* Defaults */
+pub fn def_cron() -> String {
+    String::from("0 * * * * *")
+}
+
+// The default check type.
+// The only check type available is HTTP right now.
+fn def_check_type() -> CheckType {
+    CheckType::HTTP
+}
+
+// The default HTTP URL.
+// Should be localhost.
+fn def_http_url() -> String {
+    String::from("http://127.0.0.1")
+}
+
+// The default HTTP method.
+// Most popular is GET.
+fn def_http_method() -> String {
+    String::from("GET")
+}
+
+// The default HTTP timeout.
+// This is in seconds.
+fn def_http_timeout() -> u64 {
+    10
+}
+
+// The default HTTP alert body file flag.
+fn def_body_is_file() -> bool {
+    false
+}
+
+// The default HTTP insecure flag.
+// If enabled, accepts server responses with invalid certs or hostnames.
+fn def_http_is_insecure() -> bool {
+    false
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct HttpCheckConfig {
-    #[serde(default = "def_check_http_timeout")]
-    pub timeout: u32,
-
-    #[serde(default = "def_check_http_method")]
+    #[serde(default = "def_http_method")]
     pub method: String,
 
-    #[serde(default = "def_check_http_url")]
+    #[serde(default = "def_http_url")]
     pub url: String,
 
-    #[serde(default = "def_check_http_is_insecure")]
+    #[serde(default = "def_http_timeout")]
+    pub timeout: u64,
+
+    #[serde(default = "def_http_is_insecure")]
     pub is_insecure: bool,
+
+    pub body: Option<String>,
+
+    #[serde(default = "def_body_is_file")]
+    pub body_is_file: bool,
 
     pub headers: Option<HashMap<String, String>>,
 }

@@ -91,9 +91,6 @@ impl Service {
         let fails_cnt_to_alert = self.fails_cnt_to_alert;
         let lats_max_track = self.lats_max_track;
 
-        // We need to clone *again* so that we can use these later.
-        let name2 = name.clone();
-
         // Create Arcs
         let status = self.status.clone();
         let lats = self.lats.clone();
@@ -159,6 +156,7 @@ impl Service {
                         check.fails_tot += 1;
                     }
                     Ok(_) => {
+                        // Calculate latency now and push to vector.
                         let mut lats = lats.lock().await;
 
                         // Calculate latency before anything for precision.
@@ -166,14 +164,15 @@ impl Service {
 
                         lats.push(lat);
 
-                        // If we exceed max track, we need to remove oldest entry.
+                        // If we exceed max latency track, we need to remove oldest entry.
                         if lats_max_track > 0 && lats.len() > lats_max_track as usize {
                             lats.remove(0);
                         }
 
+                        // We no longer need to access lats lock.
                         drop(lats);
 
-                        // Set state to healthy.
+                        // Quickly set state to healthy.
                         *status.lock().await = ServiceStatus::HEALTHY;
 
                         // We need to trigger pass alert if enabled and if our current fail count exeeds the fail alert threshold (or 0 if none).
@@ -200,17 +199,20 @@ impl Service {
             })
         });
 
+        // We need to clone name again.
+        let name = self.name.clone();
+
         // Check for error creating job before we actually schedule it.
         if let Err(e) = job {
             return Err(anyhow!(
                 "Unable to create job for {}: {}",
-                name2,
+                name,
                 e.to_string()
             ));
         }
 
         if let Err(e) = sch.add(job.unwrap()).await {
-            return Err(anyhow!("Unable to add job for {}: {}", name2, e));
+            return Err(anyhow!("Unable to add job for {}: {}", name, e));
         };
 
         Ok(())

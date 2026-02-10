@@ -19,8 +19,8 @@
                 "discord": {
                     "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
                     "timeout": 5,
-                    "content_basic": "TMC website is back online!",
-                    "content_raw": null
+                    "method": "TMC website is back online!",
+                    "body": null
                 }
             },
             "alert_fail": {
@@ -28,8 +28,8 @@
                 "discord": {
                     "webhook_url": "https://discord.com/api/webhooks/xxxxx/yyyyy",
                     "timeout": 5,
-                    "content_basic": "TMC website is offline!",
-                    "content_raw": null
+                    "method": "TMC website is offline!",
+                    "body": null
                 }
             }
         }

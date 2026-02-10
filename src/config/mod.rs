@@ -1,17 +1,10 @@
 mod alert;
 mod check;
-mod defaults;
 mod service;
 mod utils;
 
-pub use alert::{Alert, AlertType, DiscordAlert};
+pub use alert::{Alert, AlertType, HttpAlert};
 pub use check::{Check, CheckType, HttpCheckConfig};
-pub use defaults::{
-    def_alert_discord_content_basic, def_alert_discord_is_insecure, def_alert_discord_timeout,
-    def_alert_type, def_check_http_is_insecure, def_check_http_method, def_check_http_timeout,
-    def_check_http_url, def_check_type, def_cron, def_debug_lvl, def_fails_cnt_to_alert,
-    def_lats_max_track, def_log_dir,
-};
 pub use service::Service;
 
 use serde::Deserialize;
@@ -19,6 +12,14 @@ use std::fs::File;
 use std::io::Read;
 
 use anyhow::Result;
+
+fn def_debug_lvl() -> Option<String> {
+    Some(String::from("info"))
+}
+
+fn def_log_dir() -> Option<String> {
+    None
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {

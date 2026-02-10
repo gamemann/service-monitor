@@ -3,15 +3,18 @@ pub mod check;
 pub mod cli;
 pub mod config;
 pub mod debugger;
+pub mod helper;
 pub mod service;
 
 use cli::{Args, UserInput};
 use config::Config;
 
-use alert::{Alert, AlertType, DiscordAlert};
+use alert::{Alert, AlertType, HttpAlert};
 use check::{Check, CheckType};
 use debugger::{LogLevel, Logger};
 use service::Service;
+
+use helper::HttpMethod;
 
 use std::sync::{Arc, Mutex};
 
@@ -46,7 +49,7 @@ async fn main() -> Result<()> {
         _ => LogLevel::INFO,
     };
 
-    // We need to initialize our logger objecr first to pass along.
+    // We need to initialize our logger object first to pass along.
     let logger = Logger::new(log_level, cfg.log_dir.clone(), args.input);
 
     // We need to create our cron scheduler now.
@@ -65,40 +68,39 @@ async fn main() -> Result<()> {
                 let http: config::HttpCheckConfig = cfg_check.clone().http.unwrap();
 
                 CheckType::Http(check::HttpCheck {
+                    method: HttpMethod::from_str(http.method.as_str()),
                     url: http.url.clone(),
-                    method: match http.method.as_str() {
-                        "GET" => check::HttpMethod::GET,
-                        "POST" => check::HttpMethod::POST,
-                        "PUT" => check::HttpMethod::PUT,
-                        "DELETE" => check::HttpMethod::DELETE,
-                        "PATCH" => check::HttpMethod::PATCH,
-                        _ => check::HttpMethod::GET,
-                    },
-                    headers: http.headers.clone(),
                     timeout: http.timeout.into(),
+
+                    body: http.body.clone(),
+                    body_is_file: http.body_is_file,
+
+                    headers: http.headers.clone(),
                     is_insecure: http.is_insecure,
                 })
             }
         };
 
-        // Create a new check object.
+        // Create check object to pass to service.
         let check = Check::new(cfg_check.cron, check_type);
 
-        // Do the same thing as above, but for alerts.
+        // Create alert pass object and convert config over to object.
         let mut alert_pass: Option<Alert> = None;
 
         if let Some(alert_pass_cfg) = cfg_service.alert_pass.clone() {
             alert_pass = Some(Alert {
                 alert_type: match alert_pass_cfg.alert_type {
-                    config::AlertType::DISCORD => {
-                        let discord = alert_pass_cfg.clone().discord.unwrap();
+                    config::AlertType::HTTP => {
+                        let http = alert_pass_cfg.clone().http.unwrap();
 
-                        AlertType::Discord(DiscordAlert::new(
-                            discord.webhook_url.clone(),
-                            discord.timeout.into(),
-                            discord.is_insecure,
-                            discord.content_basic.clone(),
-                            discord.content_raw.clone(),
+                        AlertType::Http(HttpAlert::new(
+                            HttpMethod::from_str(http.method.as_str()),
+                            http.url.clone(),
+                            http.timeout,
+                            http.body.clone(),
+                            http.body_is_file,
+                            http.headers.clone(),
+                            http.is_insecure,
                         ))
                     }
                 },
@@ -111,22 +113,24 @@ async fn main() -> Result<()> {
         if let Some(alert_fail_cfg) = cfg_service.alert_fail.clone() {
             alert_fail = Some(Alert {
                 alert_type: match alert_fail_cfg.alert_type {
-                    config::AlertType::DISCORD => {
-                        let discord = alert_fail_cfg.clone().discord.unwrap();
+                    config::AlertType::HTTP => {
+                        let http = alert_fail_cfg.clone().http.unwrap();
 
-                        AlertType::Discord(DiscordAlert::new(
-                            discord.webhook_url.clone(),
-                            discord.timeout.into(),
-                            discord.is_insecure,
-                            discord.content_basic.clone(),
-                            discord.content_raw.clone(),
+                        AlertType::Http(HttpAlert::new(
+                            HttpMethod::from_str(http.method.as_str()),
+                            http.url.clone(),
+                            http.timeout,
+                            http.body.clone(),
+                            http.body_is_file,
+                            http.headers.clone(),
+                            http.is_insecure,
                         ))
                     }
                 },
             });
         }
 
-        // Create a new service object.
+        // Create a new service object and pass everything we need to self.
         let mut new_service = Service::new(
             cfg_service.name.clone(),
             check,
@@ -136,9 +140,12 @@ async fn main() -> Result<()> {
             cfg_service.lats_max_track,
         );
 
+        // We need to initialize our checks which'll add jobs to the scheduler.
         new_service.init_check(&mut sched, &logger).await?;
 
+        // Push service to vector so we can access it later.
         let mut services = services.lock().unwrap();
+
         services.push(new_service);
     }
 
