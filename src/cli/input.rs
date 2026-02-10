@@ -24,6 +24,7 @@ pub struct UserInput {
 
 static CMD_LIST: &[(&str, InputType)] = &[
     ("list", InputType::ServiceList),
+    ("ls", InputType::ServiceList),
     ("exit", InputType::Exit),
     ("quit", InputType::Exit),
     ("q", InputType::Exit),

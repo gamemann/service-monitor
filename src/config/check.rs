@@ -4,6 +4,8 @@ use std::fmt::Display;
 
 use std::collections::HashMap;
 
+use crate::helper::HTTP_OK_CODES;
+
 /* Defaults */
 pub fn def_cron() -> String {
     String::from("0 * * * * *")
@@ -44,6 +46,11 @@ fn def_http_is_insecure() -> bool {
     false
 }
 
+// We'll want to add the most popular success codes by default (200 - 206)
+fn def_http_accept_codes() -> Vec<u16> {
+    HTTP_OK_CODES.to_vec()
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct HttpCheckConfig {
     #[serde(default = "def_http_method")]
@@ -64,6 +71,9 @@ pub struct HttpCheckConfig {
     pub body_is_file: bool,
 
     pub headers: Option<HashMap<String, String>>,
+
+    #[serde(default = "def_http_accept_codes")]
+    pub accept_codes: Vec<u16>,
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]

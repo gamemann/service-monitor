@@ -77,6 +77,8 @@ async fn main() -> Result<()> {
 
                     headers: http.headers.clone(),
                     is_insecure: http.is_insecure,
+
+                    accept_codes: http.accept_codes,
                 })
             }
         };

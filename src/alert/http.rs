@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::Duration};
 
 use anyhow::{Result, anyhow};
 
-use crate::helper::HttpMethod;
+use crate::helper::{HTTP_OK_CODES, HttpMethod};
 
 #[derive(Debug, Clone)]
 pub struct HttpAlert {
@@ -98,7 +98,7 @@ impl HttpAlert {
             Ok(res) => {
                 let status_code = res.status().as_u16();
 
-                if status_code != 200 {
+                if !HTTP_OK_CODES.contains(&status_code) {
                     return Err(anyhow!("Request failed with status code: {}", status_code));
                 }
             }

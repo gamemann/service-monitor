@@ -9,6 +9,8 @@ pub enum HttpMethod {
     PATCH,
 }
 
+pub const HTTP_OK_CODES: [u16; 7] = [200, 201, 202, 203, 204, 205, 206];
+
 impl fmt::Display for HttpMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -23,12 +25,12 @@ impl fmt::Display for HttpMethod {
 
 impl HttpMethod {
     pub fn from_str(method: &str) -> HttpMethod {
-        match method {
-            "GET" => HttpMethod::GET,
-            "POST" => HttpMethod::POST,
-            "PUT" => HttpMethod::PUT,
-            "DELETE" => HttpMethod::DELETE,
-            "PATCH" => HttpMethod::PATCH,
+        match method.to_lowercase().as_str() {
+            "get" => HttpMethod::GET,
+            "post" => HttpMethod::POST,
+            "put" => HttpMethod::PUT,
+            "delete" => HttpMethod::DELETE,
+            "patch" => HttpMethod::PATCH,
             _ => HttpMethod::GET,
         }
     }

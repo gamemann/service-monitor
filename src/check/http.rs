@@ -19,6 +19,8 @@ pub struct HttpCheck {
     pub headers: Option<HashMap<String, String>>,
 
     pub is_insecure: bool,
+
+    pub accept_codes: Vec<u16>,
 }
 
 impl HttpCheck {
@@ -51,7 +53,7 @@ impl HttpCheck {
             Ok(res) => {
                 let status_code = res.status().as_u16();
 
-                if status_code != 200 {
+                if !self.accept_codes.contains(&status_code) {
                     return Err(anyhow!("Request failed with status code: {}", status_code));
                 }
 

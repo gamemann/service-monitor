@@ -72,6 +72,15 @@ impl Config {
                     }
 
                     println!("\t\t\t\tIs Insecure => {}", http.is_insecure);
+
+                    println!(
+                        "\t\t\t\tAccept Codes: {}",
+                        http.accept_codes
+                            .iter()
+                            .map(|&code| code.to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
 
                 if let Some(alert) = &service.alert_pass {

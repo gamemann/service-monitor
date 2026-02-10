@@ -69,7 +69,7 @@ We use JSON to store configuration settings. By default, the program attempts to
 | ---- | ---- | ------- | ----------- |
 | debug_lvl | string(`"debug" \| "info" \| "warn" \| "error"`) | `"info"` | The debug level as a string. |
 | log_dir | string | `NULL` | The directory to store logs in. |
-| services | array(Service Object) | `[...]` | The array of services to setup. |
+| services | vec(Service Object) | `[...]` | The array of services to setup. |
 
 <details>
     <summary>Example</summary>
@@ -148,6 +148,7 @@ This object contains settings for a HTTP/HTTPS check.
 | body_is_file | bool | `false` | If true, treats the body value as a file path and reads the contents of the file and sends that as the body string. |
 | headers | string => string mapping | `{"...": "..."}` | An optional object of headers (string => string). |
 | is_insecure | bool | `false` | If enabled, accepts server responses with invalid certs or hostnames. |
+| accept_codes | vec<u16> | `[200, 201, 202, 203, 204, 205, 206]` | What status codes are considered acceptable. If a status code returns that is not in this array, the check will fail! |
 
 ### Alert Object
 This object contains settings for a service's alert.
