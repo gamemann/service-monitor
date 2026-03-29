@@ -3,7 +3,7 @@ use crate::cli::input::UserInput;
 
 impl UserInput {
     pub async fn list_services(&self) {
-        let services = self.services.lock().unwrap();
+        let services = self.ctx.services.read().await;
 
         if services.len() < 1 {
             println!("No services found...");

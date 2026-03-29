@@ -3,9 +3,9 @@ use std::{collections::HashMap, time::Duration};
 
 use anyhow::{Result, anyhow};
 
-use crate::helper::{HTTP_OK_CODES, HttpMethod};
+use crate::helper::HttpMethod;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HttpAlert {
     pub method: HttpMethod,
     pub url: String,
@@ -14,6 +14,8 @@ pub struct HttpAlert {
 
     pub body: Option<String>,
     pub body_is_file: bool,
+
+    pub accept_codes: Vec<u16>,
 
     pub headers: Option<HashMap<String, String>>,
     pub is_insecure: bool,
@@ -30,6 +32,7 @@ impl HttpAlert {
 
         headers: Option<HashMap<String, String>>,
         is_insecure: bool,
+        accept_codes: Vec<u16>,
     ) -> Self {
         Self {
             method,
@@ -39,6 +42,7 @@ impl HttpAlert {
             body_is_file,
             headers,
             is_insecure,
+            accept_codes,
         }
     }
 
@@ -98,7 +102,7 @@ impl HttpAlert {
             Ok(res) => {
                 let status_code = res.status().as_u16();
 
-                if !HTTP_OK_CODES.contains(&status_code) {
+                if !self.accept_codes.contains(&status_code) {
                     return Err(anyhow!("Request failed with status code: {}", status_code));
                 }
             }
@@ -109,7 +113,9 @@ impl HttpAlert {
                 } else if e.is_status() {
                     let status_code = e.status().unwrap().as_u16();
 
-                    return Err(anyhow!("Request failed with status code: {}", status_code));
+                    if !self.accept_codes.contains(&status_code) {
+                        return Err(anyhow!("Request failed with status code: {}", status_code));
+                    }
                 } else {
                     return Err(anyhow!("Request failed: {}", e));
                 }

@@ -1,21 +1,23 @@
+use std::fmt;
+
 use crate::check::http::HttpCheck;
 
 use anyhow::Result;
 
-use std::fmt;
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum CheckType {
     Http(HttpCheck),
 }
 
 impl fmt::Display for CheckType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            CheckType::Http(_) => write!(f, "HTTP Check"),
+        }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Check {
     pub cron: String,
 

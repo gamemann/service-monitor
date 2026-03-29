@@ -3,7 +3,7 @@ use crate::service::ServiceStatus;
 use crate::alert::Alert;
 use crate::check::Check;
 
-use crate::debugger::{LogLevel, Logger};
+use crate::logger::{LogLevel, Logger};
 
 use tokio_cron_scheduler::{Job, JobScheduler};
 
@@ -14,7 +14,7 @@ use tokio::time::Instant;
 
 use anyhow::{Result, anyhow};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Service {
     pub status: Arc<Mutex<ServiceStatus>>,
 

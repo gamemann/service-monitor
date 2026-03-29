@@ -6,7 +6,7 @@ use anyhow::{Result, anyhow};
 
 use crate::helper::HttpMethod;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HttpCheck {
     pub url: String,
     pub method: HttpMethod,

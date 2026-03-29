@@ -1,6 +1,7 @@
 use chrono::Local;
 use std::fmt::Display;
 
+use std::fmt;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 
@@ -13,7 +14,7 @@ pub enum LogLevel {
 }
 
 impl Display for LogLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let level_str = match self {
             LogLevel::DEBUG => "DEBUG",
             LogLevel::INFO => "INFO",
@@ -24,7 +25,7 @@ impl Display for LogLevel {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Logger {
     pub level: LogLevel,
     pub log_file: Option<String>,

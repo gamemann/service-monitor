@@ -9,6 +9,31 @@ pub enum HttpMethod {
     PATCH,
 }
 
+impl From<HttpMethod> for String {
+    fn from(method: HttpMethod) -> Self {
+        match method {
+            HttpMethod::GET => "GET".to_string(),
+            HttpMethod::POST => "POST".to_string(),
+            HttpMethod::PUT => "PUT".to_string(),
+            HttpMethod::DELETE => "DELETE".to_string(),
+            HttpMethod::PATCH => "PATCH".to_string(),
+        }
+    }
+}
+
+impl From<String> for HttpMethod {
+    fn from(method: String) -> Self {
+        match method.to_lowercase().as_str() {
+            "get" => HttpMethod::GET,
+            "post" => HttpMethod::POST,
+            "put" => HttpMethod::PUT,
+            "delete" => HttpMethod::DELETE,
+            "patch" => HttpMethod::PATCH,
+            _ => HttpMethod::GET,
+        }
+    }
+}
+
 pub const HTTP_OK_CODES: [u16; 7] = [200, 201, 202, 203, 204, 205, 206];
 
 impl fmt::Display for HttpMethod {

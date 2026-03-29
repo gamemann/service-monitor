@@ -1,33 +1,23 @@
-use std::fmt::{Display, Formatter};
-
-use crate::alert::http::HttpAlert;
+use crate::alert::{FileLogAlert, http::HttpAlert};
 
 use anyhow::Result;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum AlertType {
     Http(HttpAlert),
+    FileLog(FileLogAlert),
 }
 
-impl Display for AlertType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Alert {
     pub alert_type: AlertType,
 }
 
 impl Alert {
-    pub fn new(alert_type: AlertType) -> Self {
-        Self { alert_type }
-    }
-
     pub async fn exec(&self) -> Result<()> {
         match &self.alert_type {
             AlertType::Http(http_alert) => http_alert.exec().await,
+            AlertType::FileLog(file_log_alert) => file_log_alert.exec().await,
         }
     }
 }

@@ -1,27 +1,23 @@
-pub mod alert;
-pub mod check;
-pub mod cli;
-pub mod config;
-pub mod debugger;
-pub mod helper;
-pub mod service;
+mod alert;
+mod check;
+mod cli;
+mod config;
+mod context;
+mod helper;
+mod logger;
+mod service;
 
 use cli::{Args, UserInput};
 use config::Config;
 
-use alert::{Alert, AlertType, HttpAlert};
-use check::{Check, CheckType};
-use debugger::{LogLevel, Logger};
-use service::Service;
+use logger::{LogLevel, Logger};
 
-use helper::HttpMethod;
-
-use std::sync::{Arc, Mutex};
-
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use tokio_cron_scheduler::JobScheduler;
 
 use clap::Parser;
+
+use crate::{context::ContextData, service::setup_services};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -41,7 +37,12 @@ async fn main() -> Result<()> {
     }
 
     // We need to create log level enum and parse it from config.
-    let log_level = match cfg.debug_lvl.clone().unwrap().as_str() {
+    let log_level = match cfg
+        .debug_lvl
+        .clone()
+        .unwrap_or_else(|| "info".to_string())
+        .as_str()
+    {
         "debug" => LogLevel::DEBUG,
         "info" => LogLevel::INFO,
         "warn" => LogLevel::WARN,
@@ -53,112 +54,28 @@ async fn main() -> Result<()> {
     let logger = Logger::new(log_level, cfg.log_dir.clone(), args.input);
 
     // We need to create our cron scheduler now.
-    let mut sched = JobScheduler::new().await?;
+    let sched = JobScheduler::new().await?;
+
+    // We need to create our context object now.
+    let ctx = ContextData::new(args, cfg, logger, Vec::new(), sched);
+
+    // Overwrite logger to use context's logger so we can log setup messages.
+    let logger = ctx.logger.read().await;
 
     // Create our service objects now.
-    let services = Arc::new(Mutex::new(Vec::new()));
+    setup_services(ctx.clone())
+        .await
+        .map_err(|e| anyhow!("Error setting up services: {}", e))?;
 
-    // Loop through each service from config.
-    for cfg_service in cfg.services.iter() {
-        let cfg_check = cfg_service.check.clone();
+    // Start our scheduler and add signal shutdown.
+    ctx.sched.write().await.shutdown_on_ctrl_c();
 
-        // We need to parse the check type from the config before creating the check object.
-        let check_type = match cfg_check.check_type {
-            config::CheckType::HTTP => {
-                let http: config::HttpCheckConfig = cfg_check.clone().http.unwrap();
-
-                CheckType::Http(check::HttpCheck {
-                    method: HttpMethod::from_str(http.method.as_str()),
-                    url: http.url.clone(),
-                    timeout: http.timeout.into(),
-
-                    body: http.body.clone(),
-                    body_is_file: http.body_is_file,
-
-                    headers: http.headers.clone(),
-                    is_insecure: http.is_insecure,
-
-                    accept_codes: http.accept_codes,
-                })
-            }
-        };
-
-        // Create check object to pass to service.
-        let check = Check::new(cfg_check.cron, check_type);
-
-        // Create alert pass object and convert config over to object.
-        let mut alert_pass: Option<Alert> = None;
-
-        if let Some(alert_pass_cfg) = cfg_service.alert_pass.clone() {
-            alert_pass = Some(Alert {
-                alert_type: match alert_pass_cfg.alert_type {
-                    config::AlertType::HTTP => {
-                        let http = alert_pass_cfg.clone().http.unwrap();
-
-                        AlertType::Http(HttpAlert::new(
-                            HttpMethod::from_str(http.method.as_str()),
-                            http.url.clone(),
-                            http.timeout,
-                            http.body.clone(),
-                            http.body_is_file,
-                            http.headers.clone(),
-                            http.is_insecure,
-                        ))
-                    }
-                },
-            });
-        }
-
-        // Now do same thing for alert fail.
-        let mut alert_fail: Option<Alert> = None;
-
-        if let Some(alert_fail_cfg) = cfg_service.alert_fail.clone() {
-            alert_fail = Some(Alert {
-                alert_type: match alert_fail_cfg.alert_type {
-                    config::AlertType::HTTP => {
-                        let http = alert_fail_cfg.clone().http.unwrap();
-
-                        AlertType::Http(HttpAlert::new(
-                            HttpMethod::from_str(http.method.as_str()),
-                            http.url.clone(),
-                            http.timeout,
-                            http.body.clone(),
-                            http.body_is_file,
-                            http.headers.clone(),
-                            http.is_insecure,
-                        ))
-                    }
-                },
-            });
-        }
-
-        // Create a new service object and pass everything we need to self.
-        let mut new_service = Service::new(
-            cfg_service.name.clone(),
-            check,
-            alert_pass,
-            alert_fail,
-            cfg_service.fails_cnt_to_alert,
-            cfg_service.lats_max_track,
-        );
-
-        // We need to initialize our checks which'll add jobs to the scheduler.
-        new_service.init_check(&mut sched, &logger).await?;
-
-        // Push service to vector so we can access it later.
-        let mut services = services.lock().unwrap();
-
-        services.push(new_service);
-    }
-
-    sched.shutdown_on_ctrl_c();
-
-    sched.start().await?;
+    ctx.sched.write().await.start().await?;
 
     // We need to create a new UserInput object.
-    let mut input = UserInput::new(cfg, services);
+    let mut input = UserInput::new(ctx.clone());
 
-    match args.input {
+    match ctx.cli_opts.input {
         true => logger.log(
             LogLevel::INFO,
             "Services started. Using input mode. Please input 'quit', 'exit', or 'q' to exit...",
@@ -177,7 +94,7 @@ async fn main() -> Result<()> {
         tokio::select! {
             _ = async {
                 // If we're not in input mode, just sleep.
-                if !args.input {
+                if !ctx.cli_opts.input {
                     std::future::pending::<()>().await;
                 }
 
@@ -200,7 +117,7 @@ async fn main() -> Result<()> {
 
     println!();
 
-    logger.log(debugger::INFO, "Exiting...", true);
+    logger.log(LogLevel::INFO, "Exiting...", true);
 
     Ok(())
 }

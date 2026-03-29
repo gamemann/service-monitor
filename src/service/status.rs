@@ -2,7 +2,7 @@ use crate::service::Service;
 
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum ServiceStatus {
     INIT,
     HEALTHY,

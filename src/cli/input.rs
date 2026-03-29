@@ -1,22 +1,16 @@
-use std::sync::{Arc, Mutex};
-
-use crate::config::Config;
-use crate::service::Service;
+use crate::context::Context;
 
 use anyhow::Result;
 
 use std::io::{self, Write};
 
-#[derive(Debug)]
 pub enum InputType {
     ServiceList,
     Exit,
 }
 
-#[derive(Debug, Clone)]
 pub struct UserInput {
-    pub cfg: Config,
-    pub services: Arc<Mutex<Vec<Service>>>,
+    pub ctx: Context,
 
     pub input: String,
     pub input_last: Option<String>,
@@ -31,10 +25,9 @@ static CMD_LIST: &[(&str, InputType)] = &[
 ];
 
 impl UserInput {
-    pub fn new(cfg: Config, services: Arc<Mutex<Vec<Service>>>) -> Self {
+    pub fn new(ctx: Context) -> Self {
         UserInput {
-            cfg,
-            services,
+            ctx,
 
             input: String::new(),
             input_last: None,

@@ -1,6 +1,6 @@
 use clap::Parser;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Clone)]
 #[command(version, about, long_about = None)]
 pub struct Args {
     #[arg(short = 'c', long = "cfg", default_value = "./settings.json")]
